@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	program := []int{
+	initialMemoryState := []int{
 		1, 0, 0, 3,
 		1, 1, 2, 3,
 		1, 3, 4, 3,
@@ -47,10 +47,15 @@ func main() {
 	}
 
 	// Restore gravity assist program to the 1202 program alarm state
+	program := append([]int(nil), initialMemoryState...)
 	program[1] = 12
 	program[2] = 2
 
 	output := intcode.ExecuteProgram(program)
 
 	fmt.Printf("Intcode program output: \n%v\n", output)
+
+	verb, noun := intcode.DetermineGravityAssistParameters(program, 19690720)
+	result := 100*noun + verb
+	fmt.Printf("Gravity assist parameters for output 19690720: Verb %v, Noun %v\nResult 100 * noun + verb = %v", verb, noun, result)
 }

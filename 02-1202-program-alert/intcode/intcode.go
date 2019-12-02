@@ -30,3 +30,23 @@ func ExecuteProgram(program []int) []int {
 
 	return nil
 }
+
+// DetermineGravityAssistParameters finds verb and noun for intcode positions 1 and 2 resulting in a specified output.
+func DetermineGravityAssistParameters(program []int, targetOutput int) (verb, noun int) {
+	// Verb and noun values are between 0 and 99.
+	for noun := 0; noun < 100; noun++ {
+		for verb := 0; verb < 100; verb++ {
+			currentMemoryState := append([]int(nil), program...)
+			currentMemoryState[1] = noun
+			currentMemoryState[2] = verb
+
+			output := ExecuteProgram(currentMemoryState)
+
+			if output[0] == targetOutput {
+				return verb, noun
+			}
+		}
+	}
+
+	return 0, 0
+}
