@@ -64,7 +64,7 @@ func ParsePathString(path string) []WirePathElement {
 // FindClosestCrossingDistance determines the closest crossing of the two specified path strings
 // in relation to the start point {0, 0}. The path length is determined using the Manhattan distance.
 // The start point does not count as a crossing, neither does if a path crosses itself.
-func FindClosestCrossingDistance(firstPathString, secondPathString string) int {
+func FindClosestCrossingDistance(firstPathString, secondPathString string) (int, int) {
 	firstPath := ParsePathString(firstPathString)
 	secondPath := ParsePathString(secondPathString)
 
@@ -72,34 +72,51 @@ func FindClosestCrossingDistance(firstPathString, secondPathString string) int {
 	secondPathEdgePoints := travelPath(secondPath)
 
 	currentMinDistance := math.MaxInt32
+	currentOptimalDistance := math.MaxInt32
+
+	currentLengthOfFirstWire := 0
+	currentLengthOfSecondWire := 0
 
 	for i := 0; i < len(firstPathEdgePoints)-1; i++ {
+		firstEdge := Edge{firstPathEdgePoints[i], firstPathEdgePoints[i+1]}
+
+		currentLengthOfSecondWire = 0
 		for j := 0; j < len(secondPathEdgePoints)-1; j++ {
-			firstEdge := Edge{firstPathEdgePoints[i], firstPathEdgePoints[i+1]}
 			secondEdge := Edge{secondPathEdgePoints[j], secondPathEdgePoints[j+1]}
 
 			fmt.Printf("Check edges %v and %v for intersection.\n", firstEdge, secondEdge)
 
 			intersects, intersection := intersection(firstEdge, secondEdge)
 
-			if !intersects {
-				continue
+			if intersects && (intersection.X != 0 || intersection.Y != 0) {
+				distanceFromStart := CalcManhattanDistance(Coordinate{0, 0}, intersection)
+
+				if distanceFromStart < currentMinDistance {
+					currentMinDistance = distanceFromStart
+				}
+
+				edgeFromFirstEdgeToIntersection := Edge{firstPathEdgePoints[i], intersection}
+				edgeFromSecondEdgeToIntersection := Edge{secondPathEdgePoints[j], intersection}
+				combinedWireDistanceToIntersection := currentLengthOfFirstWire + edgeFromFirstEdgeToIntersection.length() + currentLengthOfSecondWire + edgeFromSecondEdgeToIntersection.length()
+
+				fmt.Printf("Intersection found at %v with manhattan distance from start of %v and combined distance of %v.\n", intersection, distanceFromStart, combinedWireDistanceToIntersection)
+
+				if combinedWireDistanceToIntersection < currentOptimalDistance {
+					currentOptimalDistance = combinedWireDistanceToIntersection
+				}
 			}
 
-			if intersection.X == 0 && intersection.Y == 0 {
-				continue
-			}
-
-			distanceFromStart := CalcManhattanDistance(Coordinate{0, 0}, intersection)
-			fmt.Printf("Intersection found at %v with distance from start of %v.\n", intersection, distanceFromStart)
-
-			if distanceFromStart < currentMinDistance {
-				currentMinDistance = distanceFromStart
-			}
+			currentLengthOfSecondWire += secondEdge.length()
 		}
+
+		currentLengthOfFirstWire += firstEdge.length()
 	}
 
-	return currentMinDistance
+	return currentMinDistance, currentOptimalDistance
+}
+
+func (edge *Edge) length() int {
+	return CalcManhattanDistance(edge.firstPoint, edge.secondPoint)
 }
 
 func travelPath(path []WirePathElement) []Coordinate {
