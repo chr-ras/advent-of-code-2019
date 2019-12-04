@@ -32,7 +32,11 @@ func findViablePasswords() []string {
 							}
 
 							passwordGuessText := strconv.FormatInt(int64(passwordGuess), 10)
-							if !hasTwoIdenticalAdjacentDigits(passwordGuessText) {
+							if !hasAtleastTwoIdenticalAdjacentDigits(passwordGuessText) {
+								continue
+							}
+
+							if !hasGroupOfExactlyTwoIdenticalDigits(passwordGuessText) {
 								continue
 							}
 
@@ -49,11 +53,36 @@ func findViablePasswords() []string {
 	return viablePasswords
 }
 
-func hasTwoIdenticalAdjacentDigits(guess string) bool {
+func hasAtleastTwoIdenticalAdjacentDigits(guess string) bool {
 	for i := 0; i < 5; i++ {
 		if guess[i] == guess[i+1] {
 			return true
 		}
+	}
+
+	return false
+}
+
+func hasGroupOfExactlyTwoIdenticalDigits(guess string) bool {
+	groupSize := 0
+	currentGroupDigit := guess[0:1]
+
+	for i := 0; i < 6; i++ {
+		currentDigit := guess[i : i+1]
+		if currentDigit == currentGroupDigit {
+			groupSize++
+		} else {
+			if groupSize == 2 {
+				return true
+			}
+
+			currentGroupDigit = currentDigit
+			groupSize = 1
+		}
+	}
+
+	if groupSize == 2 {
+		return true
 	}
 
 	return false
