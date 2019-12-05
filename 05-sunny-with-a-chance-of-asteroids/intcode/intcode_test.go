@@ -71,6 +71,156 @@ func TestExecuteProgram(t *testing.T) {
 	}
 }
 
+func TestExecuteProgramInput(t *testing.T) {
+	cases := []struct {
+		inputValue   int
+		inputProgram []int
+		expected     []int
+	}{
+		{
+			1,
+			[]int{
+				3, 0, 99,
+			},
+			[]int{
+				1, 0, 99,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		Input = c.inputValue
+		actual := ExecuteProgram(c.inputProgram)
+		if !sliceEquals(actual, c.expected) {
+			t.Errorf("ExecuteProgram(%v) == %v with input %v, expected %v", c.inputProgram, actual, c.inputValue, c.expected)
+		}
+	}
+}
+
+func TestExecuteProgramJumpIfTrue(t *testing.T) {
+	cases := []struct {
+		inputProgram []int
+		expected     []int
+	}{
+		{
+			[]int{
+				1105, 2, 3, 99,
+			},
+			[]int{
+				1105, 2, 3, 99,
+			},
+		},
+		{
+			[]int{
+				1105, 0, 4, 99, 0,
+			},
+			[]int{
+				1105, 0, 4, 99, 0,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		actual := ExecuteProgram(c.inputProgram)
+		if !sliceEquals(actual, c.expected) {
+			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.inputProgram, actual, c.expected)
+		}
+	}
+}
+
+func TestExecuteProgramJumpIfFalse(t *testing.T) {
+	cases := []struct {
+		inputProgram []int
+		expected     []int
+	}{
+		{
+			[]int{
+				1106, 0, 3, 99,
+			},
+			[]int{
+				1106, 0, 3, 99,
+			},
+		},
+		{
+			[]int{
+				1106, 2, 4, 99, 0,
+			},
+			[]int{
+				1106, 2, 4, 99, 0,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		actual := ExecuteProgram(c.inputProgram)
+		if !sliceEquals(actual, c.expected) {
+			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.inputProgram, actual, c.expected)
+		}
+	}
+}
+
+func TestExecuteProgramLessThan(t *testing.T) {
+	cases := []struct {
+		inputProgram []int
+		expected     []int
+	}{
+		{
+			[]int{
+				1107, 0, 3, 0, 99,
+			},
+			[]int{
+				1, 0, 3, 0, 99,
+			},
+		},
+		{
+			[]int{
+				1107, 3, 0, 0, 99,
+			},
+			[]int{
+				0, 3, 0, 0, 99,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		actual := ExecuteProgram(c.inputProgram)
+		if !sliceEquals(actual, c.expected) {
+			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.inputProgram, actual, c.expected)
+		}
+	}
+}
+
+func TestExecuteProgramEquals(t *testing.T) {
+	cases := []struct {
+		inputProgram []int
+		expected     []int
+	}{
+		{
+			[]int{
+				1108, 3, 3, 0, 99,
+			},
+			[]int{
+				1, 3, 3, 0, 99,
+			},
+		},
+		{
+			[]int{
+				1108, 3, 0, 0, 99,
+			},
+			[]int{
+				0, 3, 0, 0, 99,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		actual := ExecuteProgram(c.inputProgram)
+		if !sliceEquals(actual, c.expected) {
+			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.inputProgram, actual, c.expected)
+		}
+	}
+}
+
 func TestReadParameterValue(t *testing.T) {
 	cases := []struct {
 		inputState             []int

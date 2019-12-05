@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/chr-ras/advent-of-code-2019/05-sunny-with-a-chance-of-asteroids/intcode"
 )
 
@@ -12,7 +10,8 @@ func main() {
 	}
 
 	intcode.Input = 1
-	output := intcode.ExecuteProgram(initialMemoryState)
+	intcode.ExecuteProgram(initialMemoryState)
 
-	fmt.Printf("Intcode program output: \n%v\n", output)
+	intcode.Input = 5
+	intcode.ExecuteProgram(initialMemoryState)
 }
