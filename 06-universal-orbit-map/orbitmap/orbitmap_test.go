@@ -17,6 +17,17 @@ func TestCalcOrbits(t *testing.T) {
 	}
 }
 
+func TestCalcOrbitTransitions(t *testing.T) {
+	input := "COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L\nK)YOU\nI)SAN"
+	expected := 4
+
+	actual := CalcOrbitTransitions(input)
+
+	if actual != expected {
+		t.Errorf("CalcOrbitTransitions(\"%v\") == %v, expected %v", input, actual, expected)
+	}
+}
+
 func TestParseOrbitMap(t *testing.T) {
 	cases := []struct {
 		input    string

@@ -29,5 +29,7 @@ func main() {
 
 	totalOrbits := orbitmap.CalcOrbits(orbitMap)
 
-	fmt.Printf("Total orbits: %v", totalOrbits)
+	transitions := orbitmap.CalcOrbitTransitions(orbitMap)
+
+	fmt.Printf("Total orbits: %v required transitions to santa: %v", totalOrbits, transitions)
 }
