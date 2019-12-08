@@ -12,6 +12,7 @@ func main() {
 	}
 
 	signal := thruster.CalcHighestSignal(initialMemoryState)
+	signalWithFeedbackLoop := thruster.CalcHighestSignalInFeedbackLoopMode(initialMemoryState)
 
-	fmt.Printf("Signal: %v", signal)
+	fmt.Printf("Signal: %v   Signal with feedback loop: %v", signal, signalWithFeedbackLoop)
 }

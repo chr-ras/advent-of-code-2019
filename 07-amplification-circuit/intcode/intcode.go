@@ -108,6 +108,7 @@ func handleOperation(program []int, operationPointer int, inputQueue, outputQueu
 	case "99":
 		operationPointerModifier = 0
 		exit = true
+		fmt.Println("[RET]")
 	}
 
 	return
