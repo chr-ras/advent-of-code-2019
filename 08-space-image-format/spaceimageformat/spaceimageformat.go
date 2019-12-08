@@ -1,6 +1,7 @@
 package spaceimageformat
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 )
@@ -53,4 +54,42 @@ func CheckIsValid(layers [][]int) int {
 	}
 
 	return numberOfOnes * numberOfTwos
+}
+
+// Decode decodes the encoded image in layer form.
+func Decode(encodedImage [][]int, width, height int) []int {
+	decodedImage := []int{}
+
+	for pixelIndex := 0; pixelIndex < width*height; pixelIndex++ {
+		for _, layer := range encodedImage {
+			pixelLayerValue := layer[pixelIndex]
+
+			if pixelLayerValue == 0 || pixelLayerValue == 1 {
+				decodedImage = append(decodedImage, pixelLayerValue)
+				break
+			}
+		}
+	}
+
+	return decodedImage
+}
+
+// PrettyPrint prints the image on the console screen.
+func PrettyPrint(image []int, width, height int) {
+	for row := 0; row < height; row++ {
+		rowOffset := row * width
+
+		for rowPixelIndex := rowOffset; rowPixelIndex < rowOffset+width; rowPixelIndex++ {
+			rowPixel := image[rowPixelIndex]
+
+			switch rowPixel {
+			case 0:
+				fmt.Print(" ")
+			case 1:
+				fmt.Print("░")
+			}
+		}
+
+		fmt.Println()
+	}
 }

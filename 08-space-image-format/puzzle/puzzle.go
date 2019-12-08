@@ -24,8 +24,13 @@ func main() {
 		image += scanner.Text()
 	}
 
-	decodedImage := spaceimageformat.Parse(image, 25, 6)
-	checksum := spaceimageformat.CheckIsValid(decodedImage)
+	width := 25
+	height := 6
+	parsedImage := spaceimageformat.Parse(image, width, height)
+	checksum := spaceimageformat.CheckIsValid(parsedImage)
 
-	fmt.Printf("Checksum: %v", checksum)
+	fmt.Printf("Checksum: %v\n", checksum)
+
+	decodedImage := spaceimageformat.Decode(parsedImage, width, height)
+	spaceimageformat.PrettyPrint(decodedImage, width, height)
 }
