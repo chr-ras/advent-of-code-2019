@@ -2,11 +2,9 @@ package intcode
 
 import (
 	"fmt"
-)
 
-// Input used for the input operation
-var Input []int
-var inputIndex = 0
+	queue "github.com/enriquebris/goconcurrentqueue"
+)
 
 // ExecuteProgram executes an Intcode program.
 // An operation consists of up to 4 integers, the last three being parameters with varying length:
@@ -26,15 +24,13 @@ var inputIndex = 0
 // [1]: First operand
 // [2]: Second operand
 // [3]: Save target index
-func ExecuteProgram(program []int) (finalMemory, outputValues []int) {
+func ExecuteProgram(program []int, finalMemory chan []int, inputQueue, outputQueue queue.Queue) {
 	// https://github.com/go101/go101/wiki/How-to-perfectly-clone-a-slice%3F
 	output := append([]int(nil), program...)
 	fmt.Printf("Start execute program with intcode %v\n", output)
 	operationPointerModifier := 0
 	exit := false
 	useModifierAsNewOperationPointer := false
-	outputValues = []int{}
-	inputIndex = 0
 
 	for i := 0; true; i += operationPointerModifier {
 		if useModifierAsNewOperationPointer {
@@ -42,23 +38,23 @@ func ExecuteProgram(program []int) (finalMemory, outputValues []int) {
 			i = operationPointerModifier
 		}
 
-		operationPointerModifier, exit, useModifierAsNewOperationPointer, outputValues = handleOperation(output, i, outputValues)
+		operationPointerModifier, exit, useModifierAsNewOperationPointer = handleOperation(output, i, inputQueue, outputQueue)
 
 		if exit {
-			return output, outputValues
+			finalMemory <- output
+			return
 		}
 	}
 
-	return nil, nil
+	finalMemory <- nil
 }
 
-func handleOperation(program []int, operationPointer int, outputValues []int) (operationPointerModifier int, exit, useModifierAsNewOperationPointer bool, outputValuesResult []int) {
+func handleOperation(program []int, operationPointer int, inputQueue, outputQueue queue.Queue) (operationPointerModifier int, exit, useModifierAsNewOperationPointer bool) {
 	operation := fmt.Sprintf("%05d", program[operationPointer])
 	instruction := operation[3:5]
 	operationPointerModifier = 0
 	exit = false
 	useModifierAsNewOperationPointer = false
-	outputValuesResult = outputValues
 
 	switch instruction {
 	case "01":
@@ -73,14 +69,12 @@ func handleOperation(program []int, operationPointer int, outputValues []int) (o
 		handleMultiplication(program, firstParameter, secondParameter, storeParameter)
 	case "03":
 		operationPointerModifier = 2
-		storeParameter := readParameterValue(program, operationPointer, operation, 1, true)
-		fmt.Printf("[INP] Input: %v Target: %v\n", Input, storeParameter)
-		handleInput(program, storeParameter)
+
+		handleInput(program, operationPointer, operation, inputQueue)
 	case "04":
 		operationPointerModifier = 2
-		output := readParameterValue(program, operationPointer, operation, 1, false)
-		fmt.Printf("[OUT] %v\n", output)
-		outputValuesResult = append(outputValues, output)
+
+		handleOutput(program, operationPointer, operation, outputQueue)
 	case "05":
 		operationPointerModifier = 3
 		conditionParameter := readParameterValue(program, operationPointer, operation, 1, false)
@@ -127,9 +121,22 @@ func handleMultiplication(program []int, firstFactor, secondFactor, storeAddress
 	program[storeAddress] = firstFactor * secondFactor
 }
 
-func handleInput(program []int, storeAddress int) {
-	program[storeAddress] = Input[inputIndex]
-	inputIndex++
+func handleInput(program []int, operationPointer int, operation string, inputQueue queue.Queue) {
+	storeParameter := readParameterValue(program, operationPointer, operation, 1, true)
+	fmt.Println("[INP] Dequeueing or waiting for input")
+	inputElement, _ := inputQueue.DequeueOrWaitForNextElement()
+	inputValue, _ := inputElement.(int)
+
+	fmt.Printf("[INP] Input: %v Target: %v\n", inputValue, storeParameter)
+
+	program[storeParameter] = inputValue
+}
+
+func handleOutput(program []int, operationPointer int, operation string, outputQueue queue.Queue) {
+	output := readParameterValue(program, operationPointer, operation, 1, false)
+	fmt.Printf("[OUT] %v\n", output)
+
+	outputQueue.Enqueue(output)
 }
 
 func handleLessThan(program []int, firstParameter, secondParameter, storeAddress int) {

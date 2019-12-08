@@ -3,6 +3,8 @@ package intcode
 import (
 	"reflect"
 	"testing"
+
+	queue "github.com/enriquebris/goconcurrentqueue"
 )
 
 func TestExecuteProgram(t *testing.T) {
@@ -67,7 +69,14 @@ func TestExecuteProgram(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual, _ := ExecuteProgram(c.input)
+		memoryChannel := make(chan []int)
+		inputQueue := queue.NewFIFO()
+		outputQueue := queue.NewFIFO()
+
+		go ExecuteProgram(c.input, memoryChannel, inputQueue, outputQueue)
+
+		actual := <-memoryChannel
+
 		if !sliceEquals(actual, c.expected) {
 			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.input, actual, c.expected)
 		}
@@ -92,8 +101,18 @@ func TestExecuteProgramInput(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		Input = c.inputValue
-		actual, _ := ExecuteProgram(c.inputProgram)
+		memoryChannel := make(chan []int)
+		inputQueue := queue.NewFIFO()
+		outputQueue := queue.NewFIFO()
+
+		for _, input := range c.inputValue {
+			inputQueue.Enqueue(input)
+		}
+
+		go ExecuteProgram(c.inputProgram, memoryChannel, inputQueue, outputQueue)
+
+		actual := <-memoryChannel
+
 		if !sliceEquals(actual, c.expected) {
 			t.Errorf("ExecuteProgram(%v) == %v with input %v, expected %v", c.inputProgram, actual, c.inputValue, c.expected)
 		}
@@ -111,7 +130,14 @@ func TestExecuteProgramOutput(t *testing.T) {
 
 	expectedOutput := []int{4, 0}
 
-	actualState, actualOutput := ExecuteProgram(input)
+	memoryChannel := make(chan []int)
+	inputQueue := queue.NewFIFO()
+	outputQueue := queue.NewFIFO()
+
+	go ExecuteProgram(input, memoryChannel, inputQueue, outputQueue)
+
+	actualState := <-memoryChannel
+	actualOutput := fetchAllElementsFromQueue(outputQueue)
 
 	if !reflect.DeepEqual(actualState, expectedProgramState) || !reflect.DeepEqual(actualOutput, expectedOutput) {
 		t.Errorf("ExecuteProgram(%v) == %v, %v, expected %v, %v", input, actualState, actualOutput, expectedProgramState, expectedOutput)
@@ -142,7 +168,14 @@ func TestExecuteProgramJumpIfTrue(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual, _ := ExecuteProgram(c.inputProgram)
+		memoryChannel := make(chan []int)
+		inputQueue := queue.NewFIFO()
+		outputQueue := queue.NewFIFO()
+
+		go ExecuteProgram(c.inputProgram, memoryChannel, inputQueue, outputQueue)
+
+		actual := <-memoryChannel
+
 		if !sliceEquals(actual, c.expected) {
 			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.inputProgram, actual, c.expected)
 		}
@@ -173,7 +206,14 @@ func TestExecuteProgramJumpIfFalse(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual, _ := ExecuteProgram(c.inputProgram)
+		memoryChannel := make(chan []int)
+		inputQueue := queue.NewFIFO()
+		outputQueue := queue.NewFIFO()
+
+		go ExecuteProgram(c.inputProgram, memoryChannel, inputQueue, outputQueue)
+
+		actual := <-memoryChannel
+
 		if !sliceEquals(actual, c.expected) {
 			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.inputProgram, actual, c.expected)
 		}
@@ -204,7 +244,14 @@ func TestExecuteProgramLessThan(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual, _ := ExecuteProgram(c.inputProgram)
+		memoryChannel := make(chan []int)
+		inputQueue := queue.NewFIFO()
+		outputQueue := queue.NewFIFO()
+
+		go ExecuteProgram(c.inputProgram, memoryChannel, inputQueue, outputQueue)
+
+		actual := <-memoryChannel
+
 		if !sliceEquals(actual, c.expected) {
 			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.inputProgram, actual, c.expected)
 		}
@@ -235,7 +282,14 @@ func TestExecuteProgramEquals(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual, _ := ExecuteProgram(c.inputProgram)
+		memoryChannel := make(chan []int)
+		inputQueue := queue.NewFIFO()
+		outputQueue := queue.NewFIFO()
+
+		go ExecuteProgram(c.inputProgram, memoryChannel, inputQueue, outputQueue)
+
+		actual := <-memoryChannel
+
 		if !sliceEquals(actual, c.expected) {
 			t.Errorf("ExecuteProgram(%v) == %v, expected %v", c.inputProgram, actual, c.expected)
 		}
@@ -324,11 +378,21 @@ func TestCompleteInputOutputPrograms(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		Input = c.input
-		_, actual := ExecuteProgram(c.program)
+		memoryChannel := make(chan []int)
+		inputQueue := queue.NewFIFO()
+		outputQueue := queue.NewFIFO()
 
-		if !reflect.DeepEqual(actual, c.expected) {
-			t.Errorf("ExecuteProgram(%v) == _, %v with input %v, expected _, %v", c.program, actual, c.input, c.expected)
+		for _, input := range c.input {
+			inputQueue.Enqueue(input)
+		}
+
+		go ExecuteProgram(c.program, memoryChannel, inputQueue, outputQueue)
+
+		state := <-memoryChannel
+		actual := fetchAllElementsFromQueue(outputQueue)
+
+		if state != nil && !reflect.DeepEqual(actual, c.expected) {
+			t.Errorf("ExecuteProgram(%v) output == %v with input %v, expected %v", c.program, actual, c.input, c.expected)
 		}
 	}
 }
@@ -345,4 +409,16 @@ func sliceEquals(first, second []int) bool {
 	}
 
 	return true
+}
+
+func fetchAllElementsFromQueue(queue queue.Queue) []int {
+	values := []int{}
+	for queue.GetLen() > 0 {
+		element, _ := queue.Dequeue()
+		value, _ := element.(int)
+
+		values = append(values, value)
+	}
+
+	return values
 }
