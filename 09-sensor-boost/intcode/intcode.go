@@ -183,10 +183,6 @@ func readParameterValue(program []int64, operationPointer, relativeBase int64, o
 
 	parameterValue := program[operationPointer+parameterPosition]
 
-	// if isStoreParameter {
-	// 	return parameterValue
-	// }
-
 	parameterMode := operation[parameterModeStart:parameterModeEnd]
 
 	switch parameterMode {
