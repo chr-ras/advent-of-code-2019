@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	cw "github.com/chr-ras/advent-of-code-2019/03-crossed-wires/crossedwires"
+	g "github.com/chr-ras/advent-of-code-2019/util/geometry"
 )
 
 var lineOfSightCases = []struct {
@@ -117,8 +117,8 @@ func TestCheckLineOfSight(t *testing.T) {
 	})
 
 	for _, c := range cases {
-		asteroidToCheck := cw.Coordinate{X: c.asteroidX, Y: c.asteroidY}
-		actual := CheckLineOfSight(c.asteroidMap, asteroidToCheck)
+		asteroidToCheck := g.Point{X: c.asteroidX, Y: c.asteroidY}
+		actual, _ := CheckLineOfSight(c.asteroidMap, asteroidToCheck)
 
 		if actual != c.expectedVisibleCount {
 			t.Errorf("CheckLineOfSight(%v, %v) == %v, expected %v", c.asteroidMap, asteroidToCheck, actual, c.expectedVisibleCount)
@@ -128,7 +128,7 @@ func TestCheckLineOfSight(t *testing.T) {
 
 func TestBestAsteroidForMonitoringStation(t *testing.T) {
 	for _, c := range lineOfSightCases {
-		expectedAsteroid := cw.Coordinate{X: c.asteroidX, Y: c.asteroidY}
+		expectedAsteroid := g.Point{X: c.asteroidX, Y: c.asteroidY}
 		actualAsteroid, actualVisibleAsteroids := BestAsteroidForMonitoringStation(c.asteroidMap)
 		if !reflect.DeepEqual(actualAsteroid, expectedAsteroid) || actualVisibleAsteroids != c.expectedVisibleCount {
 			t.Errorf("BestAsteroidForMonitoringStation(%v) == %v, %v, expected %v, %v", c.asteroidMap, actualAsteroid, actualVisibleAsteroids, expectedAsteroid, c.expectedVisibleCount)
