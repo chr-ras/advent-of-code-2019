@@ -49,6 +49,16 @@ func (v Vector) Length() float64 {
 	return math.Sqrt(math.Pow(float64(v.X), 2) + math.Pow(float64(v.Y), 2))
 }
 
+// RotateLeft rotates the vector 90 degrees to the left.
+func (v Vector) RotateLeft() Vector {
+	return Vector{X: v.Y, Y: -v.X}
+}
+
+// RotateRight rotates the vector 90 degrees to the right.
+func (v Vector) RotateRight() Vector {
+	return Vector{X: -v.Y, Y: v.X}
+}
+
 // AsVector transforms a point into a vector.
 func (p Point) AsVector() Vector {
 	return Vector{X: p.X, Y: p.Y}
