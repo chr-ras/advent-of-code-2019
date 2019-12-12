@@ -18,4 +18,8 @@ func main() {
 	totalEnergy := nbody.SimulateJupiterMoons(moonPositions, 1000)
 
 	fmt.Printf("Total energy: %10.0f\n", totalEnergy)
+
+	period := nbody.FindPeroid(moonPositions)
+
+	fmt.Printf("Period: %d\n", period)
 }

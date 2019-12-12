@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	c "github.com/chr-ras/advent-of-code-2019/util/calc"
 	v "github.com/chr-ras/advent-of-code-2019/util/geometry/vector3"
 )
 
@@ -18,6 +19,70 @@ func SimulateJupiterMoons(positions []v.Vector3, steps int) float64 {
 	}
 
 	return calcTotalEnergy(moons)
+}
+
+// FindPeroid runs the moon movement simulation for n steps and returns the total energy in the system.
+func FindPeroid(positions []v.Vector3) int64 {
+	moons := prepareMoons(positions)
+
+	positionXs, positionYs, positionZs := []float64{}, []float64{}, []float64{}
+	for _, moon := range moons {
+		positionXs = append(positionXs, moon.position.X)
+		positionYs = append(positionYs, moon.position.Y)
+		positionZs = append(positionZs, moon.position.Z)
+	}
+
+	xPeroidChannel := make(chan int64)
+	yPeroidChannel := make(chan int64)
+	zPeroidChannel := make(chan int64)
+
+	go findPeroidForAxis(positionXs, xPeroidChannel)
+	go findPeroidForAxis(positionYs, yPeroidChannel)
+	go findPeroidForAxis(positionZs, zPeroidChannel)
+
+	xPeroid, yPeriod, zPeriod := <-xPeroidChannel, <-yPeroidChannel, <-zPeroidChannel
+
+	period := c.LeastCommonMultiple(xPeroid, yPeriod, zPeriod)
+
+	return period
+}
+
+func findPeroidForAxis(axisPositions []float64, peroidChannel chan int64) {
+	initialPositions := append([]float64(nil), axisPositions...)
+	velocities := make([]float64, len(axisPositions))
+
+	step := int64(1)
+	for ; ; step++ {
+		for i := 0; i < len(axisPositions)-1; i++ {
+			for j := i; j < len(axisPositions); j++ {
+				if axisPositions[i] < axisPositions[j] {
+					velocities[i]++
+					velocities[j]--
+				} else if axisPositions[j] < axisPositions[i] {
+					velocities[j]++
+					velocities[i]--
+				}
+			}
+		}
+
+		for i := range axisPositions {
+			axisPositions[i] = axisPositions[i] + velocities[i]
+		}
+
+		foundPeriod := true
+		for i := range axisPositions {
+			if velocities[i] == 0 && axisPositions[i] == initialPositions[i] {
+				continue
+			}
+
+			foundPeriod = false
+			break
+		}
+
+		if foundPeriod {
+			peroidChannel <- step
+		}
+	}
 }
 
 func prepareMoons(positions []v.Vector3) []moon {

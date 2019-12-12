@@ -42,3 +42,37 @@ func TestSimulateJupiterMoons(t *testing.T) {
 		}
 	}
 }
+
+func TestFindPeriod(t *testing.T) {
+	cases := []struct {
+		input    []v.Vector3
+		expected int64
+	}{
+		{
+			[]v.Vector3{
+				v.Vector3{X: -1, Y: 0, Z: 2},
+				v.Vector3{X: 2, Y: -10, Z: -7},
+				v.Vector3{X: 4, Y: -8, Z: 8},
+				v.Vector3{X: 3, Y: 5, Z: -1},
+			},
+			2772,
+		},
+		{
+			[]v.Vector3{
+				v.Vector3{X: -8, Y: -10, Z: 0},
+				v.Vector3{X: 5, Y: 5, Z: 10},
+				v.Vector3{X: 2, Y: -7, Z: 3},
+				v.Vector3{X: 9, Y: -8, Z: -3},
+			},
+			4686774924,
+		},
+	}
+
+	for _, c := range cases {
+		actual := FindPeroid(c.input)
+
+		if actual != c.expected {
+			t.Errorf("FindPeroid(%v) == %d, expected %d", c.input, actual, c.expected)
+		}
+	}
+}

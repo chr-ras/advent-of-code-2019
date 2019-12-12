@@ -21,3 +21,8 @@ func (v Vector3) ScalarMult(scalar float64) Vector3 {
 func (v Vector3) Length() float64 {
 	return math.Sqrt(math.Pow(float64(v.X), 2) + math.Pow(float64(v.Y), 2) + math.Pow(float64(v.Z), 2))
 }
+
+// Equals returns true if the two vectors are equal, else false.
+func (v Vector3) Equals(other Vector3) bool {
+	return v.X == other.X && v.Y == other.Y && v.Z == other.Z
+}
