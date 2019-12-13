@@ -54,7 +54,6 @@ func gameLoop(inputQueue q.Queue, outputQueue q.Queue, gameLoopFinished chan str
 		y := yElement.(int64)
 		output := typeElement.(int64)
 		ballMoved := false
-		paddleMoved := false
 
 		if x == -1 && y == 0 {
 			score = output
@@ -94,17 +93,9 @@ func gameLoop(inputQueue q.Queue, outputQueue q.Queue, gameLoopFinished chan str
 				inputQueue.Enqueue(paddleMovement)
 
 			}
-
-			// fmt.Printf("Input queue len: %d paddle: %d ball: %d, render cycles: %d, mov: % d, score: %d\n", inputQueue.GetLen(), paddlePos, ballPos, renderRounds, paddleMovement, score)
-		}
-
-		if initialRenderComplete && (paddleMoved || ballMoved) {
-			// time.Sleep(5 * time.Millisecond)
 		}
 
 		render(gameState, score, writer)
-		// fmt.Printf("Input queue len: %d paddle: %d ball: %d, render cycles: %d, mov: % d, score: %d\n\n", inputQueue.GetLen(), paddlePos, ballPos, renderRounds, paddleMovement, score)
-		// fmt.Fprintf(writer.Newline(), "Input queue len: %d paddle: %d ball: %d, render cycles: %d, mov: % d", inputQueue.GetLen(), paddlePos, ballPos, renderRounds, paddleMovement)
 	}
 }
 
@@ -144,7 +135,6 @@ func render(gameState [][]cellState, score int64, writer *uilive.Writer) {
 	}
 
 	fmt.Fprintf(writer, output)
-	// fmt.Printf(output)
 }
 
 type cellState int64
