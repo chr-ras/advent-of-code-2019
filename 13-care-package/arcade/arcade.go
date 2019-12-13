@@ -63,7 +63,6 @@ func gameLoop(inputQueue q.Queue, outputQueue q.Queue, gameLoopFinished chan str
 
 			if newCellState == paddle {
 				paddlePos = x
-				paddleMoved = true
 			}
 
 			if newCellState == ball {
