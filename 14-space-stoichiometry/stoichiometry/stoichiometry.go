@@ -6,14 +6,41 @@ import (
 	"strings"
 )
 
+// MaxFuelForOre returns the maximum amount of fuel that can be produced wih the given ore.
+func MaxFuelForOre(reactions string, ore int64) int64 {
+	reactionLookup := parseReactions(reactions)
+
+	oreForOneFuel := calcMinOreForFuel(reactionLookup, 1)
+
+	lowerFuelGuess := ore / oreForOneFuel
+	upperFuelGuess := 2 * lowerFuelGuess
+
+	for upperFuelGuess-lowerFuelGuess > 1 {
+		centerFuelGuess := lowerFuelGuess + (upperFuelGuess-lowerFuelGuess)/2
+
+		centerOre := calcMinOreForFuel(reactionLookup, centerFuelGuess)
+		if centerOre < ore {
+			lowerFuelGuess = centerFuelGuess
+		} else {
+			upperFuelGuess = centerFuelGuess
+		}
+	}
+
+	return lowerFuelGuess
+}
+
 // MinOreForFuel calculates the ORE needed to produce a target amount of FUEL.
 func MinOreForFuel(reactions string, targetFuel int64) int64 {
 	reactionLookup := parseReactions(reactions)
 
+	return calcMinOreForFuel(reactionLookup, targetFuel)
+}
+
+func calcMinOreForFuel(reactionLookup map[string]reaction, targetFuel int64) int64 {
 	neededElements := make(map[string]int64)
 	leftovers := make(map[string]int64)
 
-	calcNeededElements(element{name: "FUEL", amount: 3000000}, reactionLookup, neededElements, leftovers)
+	calcNeededElements(element{name: "FUEL", amount: targetFuel}, reactionLookup, neededElements, leftovers)
 
 	return calcOreFromElements(reactionLookup, neededElements)
 }

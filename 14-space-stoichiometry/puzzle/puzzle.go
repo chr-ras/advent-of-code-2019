@@ -27,7 +27,13 @@ func main() {
 
 	input = strings.TrimSuffix(input, "\n")
 
-	requiredOre := stoichiometry.MinOreForFuel(input)
+	requiredOre := stoichiometry.MinOreForFuel(input, 1)
 
 	fmt.Printf("Required ore for 1 unit of fuel: %d\n", requiredOre)
+
+	collectedOre := int64(1000000000000)
+
+	maxFuel := stoichiometry.MaxFuelForOre(input, collectedOre)
+
+	fmt.Printf("Max fuel: %d\n", maxFuel)
 }
