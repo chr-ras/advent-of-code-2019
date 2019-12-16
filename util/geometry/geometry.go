@@ -24,9 +24,9 @@ func GetDirectionVector(from, to Point) Vector {
 // GetSmallestFactorVector determines the smallest factor vector in the given vector.
 // Examples: {1, 1} => {1, 1}; {2, 2} => {1, 1}; {2, 4} => {1, 2}; {3, 5} => {3, 5}
 func (v Vector) GetSmallestFactorVector() Vector {
-	gcd := calc.GreatestCommonDivisor(v.X, v.Y)
+	gcd := calc.GreatestCommonDivisor(int64(v.X), int64(v.Y))
 
-	return Vector{X: v.X / gcd, Y: v.Y / gcd}
+	return Vector{X: v.X / int(gcd), Y: v.Y / int(gcd)}
 }
 
 // ScalarMult multiplies a scalar with a vector.
