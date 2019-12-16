@@ -33,7 +33,7 @@ func FindShortestWayToOxygenTank(remoteControlProgram []int64) (OxygenStation, m
 func exploreShip(movementQueue, resultQueue q.Queue, oxygenStation chan OxygenStation, explorationFinished chan map[geometry.Vector]Position) {
 	startPositionVector := geometry.Vector{X: 0, Y: 0}
 	shipMap := make(map[geometry.Vector]Position)
-	shipMap[startPositionVector] = Position{Status: startPosition, AdjacentPositions: []geometry.Vector{}}
+	shipMap[startPositionVector] = Position{Status: StartPosition, AdjacentPositions: []geometry.Vector{}}
 
 	writer := uilive.New()
 	writer.Start()
@@ -82,7 +82,7 @@ func goIntoDirection(currentStepsTaken int64, previousDirection, newDirection, c
 			result := resultElement.(int64)
 
 			var newPositionAdjacentPositions []geometry.Vector
-			if result != hitWall {
+			if result != HitWall {
 				newPositionAdjacentPositions = []geometry.Vector{currentPosition}
 			}
 
@@ -93,15 +93,15 @@ func goIntoDirection(currentStepsTaken int64, previousDirection, newDirection, c
 
 			shipMap[currentPosition] = currentPositionInfo
 
-			if result == hitWall {
-				prettyPrint(currentPosition, shipMap, writer)
+			if result == HitWall {
+				PrettyPrint(currentPosition, shipMap, writer, 10)
 				return false
 			}
 
 			currentStepsTaken++
 
-			prettyPrint(newPosition, shipMap, writer)
-			if result == oxygenSystem {
+			PrettyPrint(newPosition, shipMap, writer, 10)
+			if result == OxygenSystem {
 				oxygenStation <- OxygenStation{Distance: currentStepsTaken, Position: newPosition}
 			}
 
@@ -118,10 +118,11 @@ func reverseMove(currentPosition geometry.Vector, shipMap map[geometry.Vector]Po
 	movementQueue.Enqueue(command)
 	resultQueue.DequeueOrWaitForNextElement() // ignore result because the result is already in the ship map
 
-	prettyPrint(currentPosition, shipMap, writer)
+	PrettyPrint(currentPosition, shipMap, writer, 10)
 }
 
-func prettyPrint(currentPosition geometry.Vector, shipMap map[geometry.Vector]Position, writer *uilive.Writer) {
+// PrettyPrint prints the current ship map.
+func PrettyPrint(currentPosition geometry.Vector, shipMap map[geometry.Vector]Position, writer *uilive.Writer, sleepTime int) {
 	minX, minY, maxX, maxY := math.MaxInt32, math.MaxInt32, math.MinInt32, math.MinInt32
 
 	for position := range shipMap {
@@ -156,17 +157,22 @@ func prettyPrint(currentPosition geometry.Vector, shipMap map[geometry.Vector]Po
 	for position, positionInfo := range shipMap {
 		x := position.X + xOffset
 		y := position.Y + yOffset
+		if positionInfo.Status == Oxygen {
+			output[y][x] = "O"
+			continue
+		}
+
 		if position.X == currentPosition.X && position.Y == currentPosition.Y {
 			output[y][x] = "o"
 		} else {
 			switch positionInfo.Status {
-			case hitWall:
+			case HitWall:
 				output[y][x] = "░"
-			case moved:
+			case Moved:
 				output[y][x] = "."
-			case oxygenSystem:
+			case OxygenSystem:
 				output[y][x] = "X"
-			case startPosition:
+			case StartPosition:
 				output[y][x] = "S"
 			}
 		}
@@ -182,7 +188,7 @@ func prettyPrint(currentPosition geometry.Vector, shipMap map[geometry.Vector]Po
 	}
 
 	fmt.Fprintf(writer, renderedOutput)
-	time.Sleep(25 * time.Millisecond)
+	time.Sleep(time.Duration(sleepTime) * time.Millisecond)
 }
 
 const (
@@ -191,10 +197,16 @@ const (
 	westCommand  = int64(3)
 	eastCommand  = int64(4)
 
-	hitWall       = int64(0)
-	moved         = int64(1)
-	oxygenSystem  = int64(2)
-	startPosition = int64(3)
+	// HitWall indicates that a position is occupied by a wall
+	HitWall = int64(0)
+	// Moved indicates that a position is accessible
+	Moved = int64(1)
+	// OxygenSystem indicates that a position is accessible and the oxygen system is there
+	OxygenSystem = int64(2)
+	// StartPosition indicates that a position is accessible and that it is the starting position
+	StartPosition = int64(3)
+	// Oxygen indicates that a position is accessible and that oxygen is available
+	Oxygen = int64(4)
 )
 
 // OxygenStation defines the position of the oxygen station and its distance from the starting position.
