@@ -12,13 +12,25 @@ import (
 )
 
 // FindShortestWayToOxygenTank controls the repair droid to explore the ship and find the shortest route to the oxygen tank.
-func FindShortestWayToOxygenTank(remoteControlProgram []int64) int64 {
+func FindShortestWayToOxygenTank(remoteControlProgram []int64) OxygenStation {
 	movementQueue := q.NewFIFO()
 	resultQueue := q.NewFIFO()
 	finalMemory := make(chan []int64)
 
 	go intcode.ExecuteProgram(remoteControlProgram, finalMemory, movementQueue, resultQueue, 1024)
 
+	oxygenStation := make(chan OxygenStation)
+	explorationFinished := make(chan struct{})
+
+	go exploreShip(movementQueue, resultQueue, oxygenStation, explorationFinished)
+
+	station := <-oxygenStation
+	<-explorationFinished
+
+	return station
+}
+
+func exploreShip(movementQueue, resultQueue q.Queue, oxygenStation chan OxygenStation, explorationFinished chan struct{}) {
 	startPositionVector := geometry.Vector{X: 0, Y: 0}
 	shipMap := make(map[geometry.Vector]int64)
 	shipMap[startPositionVector] = startPosition
@@ -26,43 +38,41 @@ func FindShortestWayToOxygenTank(remoteControlProgram []int64) int64 {
 	writer := uilive.New()
 	writer.Start()
 
-	minSteps := moveDroid(geometry.Vector{}, startPositionVector, shipMap, movementQueue, resultQueue, writer)
+	moveDroid(0, geometry.Vector{}, startPositionVector, shipMap, movementQueue, resultQueue, oxygenStation, writer)
 
 	writer.Stop()
 
-	return minSteps
+	explorationFinished <- struct{}{}
 }
 
-func moveDroid(previousDirection, currentPosition geometry.Vector, shipMap map[geometry.Vector]int64, movementQueue, resultQueue q.Queue, writer *uilive.Writer) int64 {
+func moveDroid(currentStepsTaken int64, previousDirection, currentPosition geometry.Vector, shipMap map[geometry.Vector]int64, movementQueue, resultQueue q.Queue, oxygenStation chan OxygenStation, writer *uilive.Writer) {
 	northDirectionVector := geometry.Vector{X: 0, Y: -1}
 	eastDirectionVector := geometry.Vector{X: 1, Y: 0}
 	southDirectionVector := geometry.Vector{X: 0, Y: 1}
 	westDirectionVector := geometry.Vector{X: -1, Y: 0}
 
-	movedNorth, _ := goIntoDirection(previousDirection, northDirectionVector, currentPosition, northCommand, shipMap, movementQueue, resultQueue, writer)
+	movedNorth := goIntoDirection(currentStepsTaken, previousDirection, northDirectionVector, currentPosition, northCommand, shipMap, movementQueue, resultQueue, oxygenStation, writer)
 	if movedNorth {
 		reverseMove(currentPosition, shipMap, southCommand, movementQueue, resultQueue, writer)
 	}
 
-	movedEast, _ := goIntoDirection(previousDirection, eastDirectionVector, currentPosition, eastCommand, shipMap, movementQueue, resultQueue, writer)
+	movedEast := goIntoDirection(currentStepsTaken, previousDirection, eastDirectionVector, currentPosition, eastCommand, shipMap, movementQueue, resultQueue, oxygenStation, writer)
 	if movedEast {
 		reverseMove(currentPosition, shipMap, westCommand, movementQueue, resultQueue, writer)
 	}
 
-	movedSouth, _ := goIntoDirection(previousDirection, southDirectionVector, currentPosition, southCommand, shipMap, movementQueue, resultQueue, writer)
+	movedSouth := goIntoDirection(currentStepsTaken, previousDirection, southDirectionVector, currentPosition, southCommand, shipMap, movementQueue, resultQueue, oxygenStation, writer)
 	if movedSouth {
 		reverseMove(currentPosition, shipMap, northCommand, movementQueue, resultQueue, writer)
 	}
 
-	movedWest, _ := goIntoDirection(previousDirection, westDirectionVector, currentPosition, westCommand, shipMap, movementQueue, resultQueue, writer)
+	movedWest := goIntoDirection(currentStepsTaken, previousDirection, westDirectionVector, currentPosition, westCommand, shipMap, movementQueue, resultQueue, oxygenStation, writer)
 	if movedWest {
 		reverseMove(currentPosition, shipMap, eastCommand, movementQueue, resultQueue, writer)
 	}
-
-	return math.MaxInt64
 }
 
-func goIntoDirection(previousDirection, newDirection, currentPosition geometry.Vector, droidCommand int64, shipMap map[geometry.Vector]int64, movementQueue, resultQueue q.Queue, writer *uilive.Writer) (bool, int64) {
+func goIntoDirection(currentStepsTaken int64, previousDirection, newDirection, currentPosition geometry.Vector, droidCommand int64, shipMap map[geometry.Vector]int64, movementQueue, resultQueue q.Queue, oxygenStation chan OxygenStation, writer *uilive.Writer) bool {
 	if previousDirection.ScalarMult(-1) != newDirection {
 		newPosition := currentPosition.Add(newDirection)
 
@@ -74,16 +84,23 @@ func goIntoDirection(previousDirection, newDirection, currentPosition geometry.V
 
 			if result == hitWall {
 				prettyPrint(currentPosition, shipMap, writer)
-				return false, math.MaxInt64
+				return false
 			}
 
-			prettyPrint(newPosition, shipMap, writer)
+			currentStepsTaken++
 
-			return true, moveDroid(newDirection, newPosition, shipMap, movementQueue, resultQueue, writer)
+			prettyPrint(newPosition, shipMap, writer)
+			if result == oxygenSystem {
+				oxygenStation <- OxygenStation{Distance: currentStepsTaken, Position: newPosition}
+			}
+
+			moveDroid(currentStepsTaken, newDirection, newPosition, shipMap, movementQueue, resultQueue, oxygenStation, writer)
+
+			return true
 		}
 	}
 
-	return false, math.MaxInt64
+	return false
 }
 
 func reverseMove(currentPosition geometry.Vector, shipMap map[geometry.Vector]int64, command int64, movementQueue, resultQueue q.Queue, writer *uilive.Writer) {
@@ -168,3 +185,9 @@ const (
 	oxygenSystem  = int64(2)
 	startPosition = int64(3)
 )
+
+// OxygenStation defines the position of the oxygen station and its distance from the starting position.
+type OxygenStation struct {
+	Distance int64
+	Position geometry.Vector
+}
