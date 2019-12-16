@@ -10,7 +10,9 @@ import (
 func main() {
 	program := aoc.ReadIntcode("repair_droid.txt")
 
-	oxygenStation := repairdroid.FindShortestWayToOxygenTank(program)
+	oxygenStation, shipMap := repairdroid.FindShortestWayToOxygenTank(program)
 
 	fmt.Printf("Oxygen station found after %d steps at position %v.\n", oxygenStation.Distance, oxygenStation.Position)
+
+	fmt.Println(shipMap)
 }
